@@ -3,7 +3,9 @@ import SearchItem from './SearchItem'
 import AddItem from './AddItem'
 import Content from './Content'
 import Footer from './Footer'
+import apiRequest  from './apiRequest'
 import {useState, useEffect} from 'react'
+
 
 function App() {
   const API_Url = 'http://localhost:3500/items'
@@ -17,6 +19,7 @@ function App() {
   useEffect(() =>{
     
     const fetchItems = async () => {
+
       try{
         const response = await fetch(API_Url)
         if (!response.ok) throw Error ("Did not receive expected data")
@@ -38,28 +41,65 @@ function App() {
     
   }, [])
 
-  const addItem = (item) =>{
+  const addItem = async (item) =>{
+
     const id = items.length ? items[items.length - 1].id + 1 : 1
     const myNewItem = {id, checked:false,item}
     const listItems = [...items,myNewItem]
     setItems(listItems)
+
+    const postOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(myNewItem)
+    }
+
+    const result = await apiRequest(API_Url, postOptions)
+    if (result) setFetchError(result)
+    
   }
 
-  const handleCheck = (id) => {
-    const listItems = items.map((item) => item.id == id ? {...item, checked: !item.checked}: item);
+  const handleCheck = async (id) => {
+
+    const listItems = items.map((item) => item.id == id ? {...item, checked: !item.checked}: item)
     setItems(listItems)
+
+    const myItem = listItems.filter((item) => item.id === id)
+
+    const updateOptions = {
+      method: 'PATCH',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({checked: myItem[0].checked})
+    }
+
+    const reqURL = `${API_Url}/${id}`
+    const result = await apiRequest(reqURL, updateOptions)
+    if (result) setFetchError(result)
+
   }
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
+
     const listItems = items.filter((item) => item.id !==id );
     setItems(listItems)
+
+    const deleteOptions = { method: 'DELETE' } 
+    
+    const reqURL = `${API_Url}/${id}`
+    const result = await apiRequest(reqURL, deleteOptions)
+    if (result) setFetchError(result)    
+
   }
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    if(!newItem) return;
-    addItem(newItem);
-    setNewItem('');
+    e.preventDefault()
+    if(!newItem) return
+    addItem(newItem)
+    setNewItem('')
   }
 
   return (
@@ -90,5 +130,5 @@ function App() {
   );
 }
 
-export default App;
+export default App
  
